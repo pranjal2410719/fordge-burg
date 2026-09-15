@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Next.js build output
+.next/
+frontend/.next/
+out/
+frontend/out/
+
+# Env files (never commit secrets)
+.env
+.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+
+# TypeScript build info
+*.tsbuildinfo
+frontend/*.tsbuildinfo
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Session transcripts (local only)
+session-*.md

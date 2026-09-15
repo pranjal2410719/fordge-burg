@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand */
+  --color-navy-950: #050d1a;
+  --color-navy-900: #0a1930;
+  --color-navy-800: #122040;
+  --color-navy-700: #1a2e58;
+  --color-navy-600: #234070;
+
+  /* Accent blues */
+  --color-blue-600: #1e6fd9;
+  --color-blue-500: #2e86f5;
+  --color-blue-400: #5aa3f7;
+  --color-blue-100: #dbeafe;
+  --color-blue-50:  #eff6ff;
+
+  /* Canvas / Surface */
+  --color-canvas:   #f0f4f8;
+  --color-surface:  #ffffff;
+  --color-surface2: #f8fafc;
+
+  /* Text */
+  --color-text-primary: #0a1930;
+  --color-text-secondary: #3d4f63;
+  --color-text-muted: #5b6b7f;
+  --color-text-subtle: #8fa0b3;
+
+  /* Border */
+  --color-border: #dbe2ec;
+  --color-border-strong: #b4c1d4;
+
+  /* Risk */
+  --color-risk-high: #c0392b;
+  --color-risk-high-bg: #fef2f2;
+  --color-risk-med: #d4910a;
+  --color-risk-med-bg: #fffbeb;
+  --color-risk-low: #1e8449;
+  --color-risk-low-bg: #f0fdf4;
+
+  /* Compat */
+  --color-compat-high: #1e8449;
+  --color-compat-marginal: #d4910a;
+
+  /* Fonts */
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", ui-monospace, monospace;
+}
+
+/* ─── Base ─── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 3px; }
+
+/* ─── Focus ring ─── */
+:focus-visible { outline: 2px solid var(--color-blue-600); outline-offset: 2px; }
+
+/* ─── Animations ─── */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse-dot { 0%,100% { opacity:1 } 50% { opacity:.4 } }
+@keyframes slide-in { from { transform:translateX(-100%) } to { transform:translateX(0) } }
+@keyframes fade-in { from { opacity:0; transform:translateY(4px) } to { opacity:1; transform:translateY(0) } }
+
+.animate-spin    { animation: spin 1s linear infinite; }
+.animate-pulse-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
+.animate-slide-in  { animation: slide-in 0.22s ease; }
+.animate-fade-in   { animation: fade-in 0.18s ease; }
+
+/* ─── Print ─── */
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+}
