@@ -16,7 +16,8 @@ import {
   Gauge,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { SimulationStatus } from "@/components/session/MissionContext";
+import { useMission, type SimulationStatus } from "@/components/session/MissionContext";
+import type { RouteAlternative, RouteId } from "@/lib/data";
 
 export interface LogEntry {
   id: string;
@@ -147,26 +148,50 @@ const TELEMETRY_STREAM_DATA: Omit<LogEntry, "id" | "timestamp">[] = [
 interface SimulationTelemetryHudProps {
   simulationStatus: SimulationStatus;
   simulationProgress: number;
+  selectedRoute?: RouteAlternative;
 }
 
 export function SimulationTelemetryHud({
   simulationStatus,
   simulationProgress,
+  selectedRoute,
 }: SimulationTelemetryHudProps) {
+  const mission = useMission();
+  const activeRoute = selectedRoute ?? mission?.selectedRoute;
+
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isPaused, setIsPaused] = useState(false);
   const [copied, setCopied] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string>("ALL");
   const logContainerRef = useRef<HTMLDivElement>(null);
 
-  // Live real-time numbers that animate during simulation
+  // Live real-time numbers that synchronize with active route and animate during simulation
   const [nodesCount, setNodesCount] = useState(0);
   const [cpaDist, setCpaDist] = useState(2.4);
-  const [icePeak, setIcePeak] = useState(78.4);
-  const [rioScore, setRioScore] = useState(16.8);
-  const [besetmentPct, setBesetmentPct] = useState(18.4);
+  const [icePeak, setIcePeak] = useState(activeRoute ? activeRoute.iceExposure.peakIceConcTenths * 10 : 78.4);
+  const [rioScore, setRioScore] = useState(activeRoute ? activeRoute.rio.score : 16.8);
+  const [besetmentPct, setBesetmentPct] = useState(
+    activeRoute
+      ? (activeRoute.id === "shortest" ? 84.0 : activeRoute.id === "safest" ? 14.0 : activeRoute.id === "fuel_efficient" ? 46.0 : 18.4)
+      : 18.4
+  );
 
-  // Synchronize logs based on simulationProgress
+  // Synchronize telemetry readout when activeRoute changes
+  useEffect(() => {
+    if (activeRoute) {
+      setRioScore(activeRoute.rio.score);
+      setIcePeak(activeRoute.iceExposure.peakIceConcTenths * 10);
+      const bMap: Record<RouteId, number> = {
+        shortest: 84.0,
+        safest: 14.0,
+        fuel_efficient: 46.0,
+        balanced: 18.4,
+      };
+      setBesetmentPct(bMap[activeRoute.id] ?? 18.4);
+    }
+  }, [activeRoute?.id, activeRoute?.rio.score, activeRoute?.iceExposure.peakIceConcTenths]);
+
+  // Synchronize logs based on simulationProgress and activeRoute
   useEffect(() => {
     if (simulationStatus === "idle") {
       setLogs([]);
@@ -174,9 +199,35 @@ export function SimulationTelemetryHud({
       return;
     }
 
+    const dynamicStreamData = TELEMETRY_STREAM_DATA.map((item) => {
+      if (item.subsystem === "POLARIS" && item.level === "success" && activeRoute) {
+        return {
+          ...item,
+          message: `Polaris RIO score certified: ${activeRoute.rio.scoreFormatted} (${activeRoute.rio.status} under ${activeRoute.rio.regulatoryClause}).`,
+          metric: `${activeRoute.rio.scoreFormatted} RIO ${activeRoute.rio.status}`,
+        };
+      }
+      if (item.subsystem === "METOCEAN" && item.metric?.includes("Peak") && activeRoute) {
+        return {
+          ...item,
+          message: `Dynamic ice concentration raster mapped. Peak sector pack density: ${activeRoute.iceExposure.peakIceConcTenths * 10}% in ${activeRoute.iceExposure.peakLocation}.`,
+          metric: `${activeRoute.iceExposure.peakIceConcTenths * 10}% Peak`,
+        };
+      }
+      if (item.subsystem === "CONSEQUENCE" && item.level === "success" && activeRoute) {
+        const b = activeRoute.id === "shortest" ? 84.0 : activeRoute.id === "safest" ? 14.0 : activeRoute.id === "fuel_efficient" ? 46.0 : 18.4;
+        return {
+          ...item,
+          message: `Besetment probability converged to ${b.toFixed(1)}%. Hull consequence index: ${activeRoute.averageRiskScore}/100.`,
+          metric: `${b.toFixed(1)}% Beset`,
+        };
+      }
+      return item;
+    });
+
     if (simulationStatus === "running") {
-      const targetCount = Math.floor((simulationProgress / 100) * TELEMETRY_STREAM_DATA.length);
-      const activeEntries = TELEMETRY_STREAM_DATA.slice(0, Math.max(1, targetCount)).map((item, idx) => ({
+      const targetCount = Math.floor((simulationProgress / 100) * dynamicStreamData.length);
+      const activeEntries = dynamicStreamData.slice(0, Math.max(1, targetCount)).map((item, idx) => ({
         ...item,
         id: `log-${idx}`,
         timestamp: `+00:${(idx * 0.12).toFixed(2).padStart(5, "0")}`,
@@ -189,7 +240,7 @@ export function SimulationTelemetryHud({
       // Ticking node counter
       setNodesCount(Math.min(4820, Math.floor((simulationProgress / 100) * 4820)));
     } else if (simulationStatus === "completed") {
-      const allEntries = TELEMETRY_STREAM_DATA.map((item, idx) => ({
+      const allEntries = dynamicStreamData.map((item, idx) => ({
         ...item,
         id: `log-${idx}`,
         timestamp: `+00:${(idx * 0.12).toFixed(2).padStart(5, "0")}`,
@@ -197,7 +248,7 @@ export function SimulationTelemetryHud({
       setLogs(allEntries);
       setNodesCount(4820);
     }
-  }, [simulationStatus, simulationProgress, isPaused]);
+  }, [simulationStatus, simulationProgress, isPaused, activeRoute?.id, activeRoute?.rio.scoreFormatted]);
 
   // Auto-scroll to bottom of log feed
   useEffect(() => {
@@ -293,9 +344,11 @@ export function SimulationTelemetryHud({
         <div className="rounded border border-navy-800/70 bg-[#09182d] p-2">
           <span className="text-[10px] font-mono text-slate-400 block uppercase">Peak Ice Conc</span>
           <span className="text-base font-mono font-bold text-amber-300">
-            {simulationStatus === "idle" ? "—" : `${icePeak}%`}
+            {simulationStatus === "idle" ? "—" : `${icePeak.toFixed(0)}%`}
           </span>
-          <span className="text-[9px] font-mono text-slate-500 block">Antarctic Sound</span>
+          <span className="text-[9px] font-mono text-slate-500 block truncate" title={activeRoute?.iceExposure.peakLocation}>
+            {activeRoute?.iceExposure.peakLocation ?? "Antarctic Sound"}
+          </span>
         </div>
 
         <div className="rounded border border-navy-800/70 bg-[#09182d] p-2">
@@ -316,18 +369,38 @@ export function SimulationTelemetryHud({
 
         <div className="rounded border border-navy-800/70 bg-[#09182d] p-2">
           <span className="text-[10px] font-mono text-slate-400 block uppercase">Besetment Risk</span>
-          <span className="text-base font-mono font-bold text-slate-200">
-            {simulationStatus === "idle" ? "—" : `${besetmentPct}%`}
+          <span
+            className={cn(
+              "text-base font-mono font-bold",
+              besetmentPct > 50 ? "text-rose-400" : besetmentPct > 30 ? "text-amber-300" : "text-slate-200"
+            )}
+          >
+            {simulationStatus === "idle" ? "—" : `${besetmentPct.toFixed(1)}%`}
           </span>
-          <span className="text-[9px] font-mono text-slate-500 block">Monte Carlo (1k)</span>
+          <span className="text-[9px] font-mono text-slate-500 block">
+            {activeRoute?.id === "shortest" ? "High Ridge Pack" : activeRoute?.id === "safest" ? "Ice Standoff" : "Monte Carlo (1k)"}
+          </span>
         </div>
 
         <div className="rounded border border-navy-800/70 bg-[#09182d] p-2">
           <span className="text-[10px] font-mono text-slate-400 block uppercase">POLARIS RIO</span>
-          <span className="text-base font-mono font-bold text-emerald-400">
-            {simulationStatus === "idle" ? "—" : `+${rioScore} PASS`}
+          <span
+            className={cn(
+              "text-base font-mono font-bold",
+              (activeRoute ? activeRoute.rio.status === "PASS" : rioScore > 0)
+                ? "text-emerald-400"
+                : "text-amber-400"
+            )}
+          >
+            {simulationStatus === "idle"
+              ? "—"
+              : activeRoute
+              ? `${activeRoute.rio.scoreFormatted} ${activeRoute.rio.status}`
+              : `${rioScore > 0 ? "+" : ""}${rioScore} PASS`}
           </span>
-          <span className="text-[9px] font-mono text-slate-500 block">IMO Polar Code</span>
+          <span className="text-[9px] font-mono text-slate-500 block truncate" title={activeRoute?.rio.regulatoryClause}>
+            {activeRoute?.rio.status === "PASS" ? "IMO Polar Code PASS" : "IMO Marginal Notice"}
+          </span>
         </div>
       </div>
 

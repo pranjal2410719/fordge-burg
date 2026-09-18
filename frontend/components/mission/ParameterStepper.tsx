@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ChevronRight, Play, Check, Clock, Sparkles } from "lucide-react";
+import { CheckCircle2, ChevronRight, Play, Check, Clock, Sparkles, Zap, RotateCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SimulationStatus } from "@/components/session/MissionContext";
 
@@ -15,6 +15,7 @@ interface ParameterStepperProps {
   objectiveName: string;
   simulationStatus: SimulationStatus;
   simulationProgress: number;
+  onGeneratePlan?: () => void;
 }
 
 export function ParameterStepper({
@@ -28,6 +29,7 @@ export function ParameterStepper({
   objectiveName,
   simulationStatus,
   simulationProgress,
+  onGeneratePlan,
 }: ParameterStepperProps) {
   const steps = [
     {
@@ -88,6 +90,10 @@ export function ParameterStepper({
   ];
 
   const handleStepClick = (stepId: number, targetId: string) => {
+    if (stepId === 5 && onGeneratePlan) {
+      onGeneratePlan();
+      return;
+    }
     onStepClick?.(stepId);
     if (typeof document !== "undefined") {
       const el = document.getElementById(targetId);
@@ -197,6 +203,53 @@ export function ParameterStepper({
           })}
         </ol>
       </nav>
+
+      {/* Parameter Stepper Summary Bar */}
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-3">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-semibold text-text-muted">Active Setup:</span>
+          <span className="rounded-md border border-border bg-surface2 px-2 py-0.5 font-bold text-navy-900">
+            {missionName}
+          </span>
+          <span className="text-text-muted">·</span>
+          <span className="rounded-md border border-border bg-surface2 px-2 py-0.5 font-semibold text-navy-800">
+            {vesselName} ({vesselClass})
+          </span>
+          <span className="text-text-muted">·</span>
+          <span className="rounded-md border border-border bg-surface2 px-2 py-0.5 font-mono text-[11px] font-bold text-blue-600">
+            {horizonDays * 24}h Window
+          </span>
+          <span className="text-text-muted">·</span>
+          <span className="rounded-md border border-border bg-surface2 px-2 py-0.5 font-mono text-[11px] font-bold uppercase text-navy-900">
+            {objectiveName}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          onClick={onGeneratePlan}
+          disabled={simulationStatus === "running"}
+          data-testid="mission-primary-action-stepper"
+          className={cn(
+            "flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-bold text-white transition-all shadow-sm cursor-pointer",
+            simulationStatus === "running"
+              ? "bg-navy-700 opacity-80 cursor-not-allowed"
+              : "bg-navy-900 hover:bg-navy-800 hover:scale-[1.01]"
+          )}
+        >
+          {simulationStatus === "running" ? (
+            <>
+              <RotateCw size={14} className="animate-spin" />
+              Simulating ({simulationProgress}%)
+            </>
+          ) : (
+            <>
+              <Zap size={14} className="fill-current text-amber-400" />
+              Generate Plan & Run Simulation
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

@@ -12,7 +12,7 @@ import {
   riskBar,
   cn,
 } from "@/lib/utils";
-import { TrendingDown, TrendingUp, Activity, Ship, MapPin, ArrowRight, Settings2, BarChart3, Navigation, AlertTriangle, Loader2, BrainCircuit } from "lucide-react";
+import { TrendingDown, TrendingUp, Activity, Ship, MapPin, ArrowRight, Settings2, BarChart3, Navigation, AlertTriangle, Loader2, BrainCircuit, ShieldCheck, Anchor } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
@@ -162,21 +162,38 @@ export default function DashboardPage() {
             </div>
             
             <div className="p-5 flex flex-col flex-1">
-              <div className="flex items-start justify-between gap-4 mb-5">
+              <div className="flex items-start justify-between gap-3 mb-4">
                 <div>
                   <p className="text-base font-bold text-navy-900">{selectedRoute.name}</p>
-                  <p className="mt-1 text-xs font-medium text-text-muted">{selectedRoute.tradeOff}</p>
+                  <p className="mt-0.5 text-xs font-medium text-text-muted">{selectedRoute.tradeOff}</p>
                 </div>
-                <div className={cn("flex flex-col items-center justify-center rounded-xl border px-3 py-2 shadow-sm min-w-[3rem]", riskBadge(risk))}>
-                  <span className="text-[10px] font-bold uppercase tracking-wider opacity-80 mb-0.5">Risk</span>
-                  <span className="font-mono text-lg font-bold leading-none">{risk}</span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {/* POLARIS RIO Badge */}
+                  <div
+                    className={cn(
+                      "flex flex-col items-center justify-center rounded-xl border px-2 py-1.5 shadow-xs",
+                      selectedRoute.rio.status === "PASS"
+                        ? "border-risk-low/30 bg-risk-low-bg text-risk-low"
+                        : "border-risk-med/30 bg-risk-med-bg text-risk-med"
+                    )}
+                    title={selectedRoute.rio.description}
+                  >
+                    <span className="text-[9px] font-bold uppercase tracking-wider opacity-80">RIO</span>
+                    <span className="font-mono text-xs font-bold leading-none">{selectedRoute.rio.scoreFormatted}</span>
+                  </div>
+                  {/* Risk Badge */}
+                  <div className={cn("flex flex-col items-center justify-center rounded-xl border px-2.5 py-1.5 shadow-xs min-w-[2.8rem]", riskBadge(risk))}>
+                    <span className="text-[9px] font-bold uppercase tracking-wider opacity-80 mb-0.5">Risk</span>
+                    <span className="font-mono text-base font-bold leading-none">{risk}</span>
+                  </div>
                 </div>
               </div>
               
-              <div className="mb-5 bg-canvas/50 p-3 rounded-xl border border-border/40">
-                <div className="flex justify-between text-xs font-medium text-text-subtle mb-2">
+              {/* Risk Tolerance Meter */}
+              <div className="mb-4 bg-canvas/50 p-3 rounded-xl border border-border/40">
+                <div className="flex justify-between text-xs font-medium text-text-subtle mb-1.5">
                   <span>Safety Tolerance</span>
-                  <span className="text-navy-900">{risk}/100</span>
+                  <span className="font-bold text-navy-900">{riskLabel(risk)} ({risk}/100)</span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-border/60 overflow-hidden shadow-inner">
                   <div
@@ -186,11 +203,51 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* AI Algorithmic Rationale */}
+              {/* Ice Exposure Breakdown */}
+              <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl bg-canvas/60 p-3 border border-border/40 text-xs">
+                <div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-text-subtle block">Peak Ice Exposure</span>
+                  <span className="font-mono font-bold text-navy-900 text-sm">
+                    {selectedRoute.iceExposure.peakIceConcTenths}/10
+                  </span>
+                  <span className="text-[10px] text-text-muted block truncate" title={selectedRoute.iceExposure.peakLocation}>
+                    {selectedRoute.iceExposure.peakLocation}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-text-subtle block">Pack / Heavy Ridges</span>
+                  <span className="font-mono font-bold text-navy-900 text-sm">
+                    {selectedRoute.iceExposure.mediumPackPct + selectedRoute.iceExposure.heavyRidgePct}%
+                  </span>
+                  <span className="text-[10px] text-text-muted block">
+                    {selectedRoute.iceExposure.multiYearIceNm > 0
+                      ? `${selectedRoute.iceExposure.multiYearIceNm} NM Multi-Year`
+                      : "0 NM Multi-Year Ice"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Waypoints Summary */}
+              <div className="mb-4 flex items-center justify-between rounded-xl bg-surface p-2.5 border border-border/50 text-xs">
+                <div className="flex items-center gap-2">
+                  <Anchor size={14} className="text-blue-600" />
+                  <span className="font-semibold text-navy-900">{selectedRoute.waypoints.length} Waypoints Scheduled</span>
+                </div>
+                <span className="font-mono text-text-muted text-[11px]">
+                  {selectedRoute.waypoints[0]?.name.split(" ")[0]} → {selectedRoute.waypoints[selectedRoute.waypoints.length - 1]?.name.split(" ")[0]}
+                </span>
+              </div>
+
+              {/* AI Algorithmic Rationale (Dynamically driven by selectedRoute.aiRationale) */}
               <div className="mb-5 rounded-xl border border-blue-100 bg-blue-50/30 p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-3">
-                  <BrainCircuit size={14} className="text-blue-600" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-blue-900">AI Pathfinding Rationale</h3>
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <BrainCircuit size={14} className="text-blue-600" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-blue-900">AI Pathfinding Rationale</h3>
+                  </div>
+                  <span className="font-mono text-[10px] font-bold text-blue-700 bg-blue-100/70 px-1.5 py-0.5 rounded">
+                    {selectedRoute.id.toUpperCase()}
+                  </span>
                 </div>
                 {isAnalyzing ? (
                   <div className="space-y-2 animate-pulse">
@@ -199,15 +256,18 @@ export default function DashboardPage() {
                     <div className="h-3 w-4/6 bg-blue-100 rounded"></div>
                   </div>
                 ) : (
-                  <div className="space-y-2.5 text-xs text-blue-900/80 animate-fade-in">
+                  <div className="space-y-2 text-xs text-blue-900/85 animate-fade-in">
                     <p>
-                      <strong>Algorithm:</strong> <span className="font-mono bg-blue-100 px-1 py-0.5 rounded text-[10px]">Multi-objective A* (D* Lite)</span>
+                      <strong>Algorithm:</strong>{" "}
+                      <span className="font-mono bg-blue-100 px-1.5 py-0.5 rounded text-[10px] font-semibold text-blue-800">
+                        {selectedRoute.aiRationale.algorithm}
+                      </span>
                     </p>
-                    <p>
-                      <strong>Heuristics:</strong> Selected to minimize multi-year ice exposure {'>'} 1.2m while optimizing for {vessel.name}'s PC4 limits. 
+                    <p className="leading-relaxed">
+                      <strong>Heuristics:</strong> {selectedRoute.aiRationale.heuristics}
                     </p>
-                    <p>
-                      <strong>Trade-off:</strong> The engine accepted a +{Math.round(selectedRoute.distanceNm * 0.08)} NM distance penalty to maintain {vessel.iceLimitKn} kn, avoiding high-pressure ice.
+                    <p className="leading-relaxed text-blue-950">
+                      <strong>Trade-off:</strong> {selectedRoute.aiRationale.tradeOff}
                     </p>
                   </div>
                 )}

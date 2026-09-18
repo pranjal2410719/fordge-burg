@@ -58,6 +58,7 @@ export default function VesselPage() {
 
   return (
     <AppShell>
+      <div className="animate-fade-in">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl font-bold text-navy-900">Vessel Intelligence</h1>
@@ -200,6 +201,7 @@ export default function VesselPage() {
             <div className="flex items-center gap-1 text-[10px] text-risk-high"><XCircle size={10} /> Not capable</div>
           </div>
         </div>
+      </div>
       </div>
     </AppShell>
   );

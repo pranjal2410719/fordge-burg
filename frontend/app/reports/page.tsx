@@ -6,14 +6,6 @@ import { MITIGATIONS } from "@/lib/data";
 import { formatFuelTons, formatHours, formatNauticalMiles, riskBadge, cn } from "@/lib/utils";
 import { Printer, FileText, Anchor, Ship, Route, ShieldAlert } from "lucide-react";
 
-const WAYPOINTS = [
-  { id: "WP1", name: "Maxwell Bay Departure", lat: "62°12.4'S", lon: "58°57.0'W", distNm: 0,   etaHrs: 0,    speedKn: 0,   iceConc: "2.1/10" },
-  { id: "WP2", name: "Antarctic Sound Entry", lat: "63°24.0'S", lon: "58°45.0'W", distNm: 85,  etaHrs: 7.1,  speedKn: 12,  iceConc: "4.2/10" },
-  { id: "WP3", name: "Active Pass Choke",     lat: "64°08.0'S", lon: "57°30.0'W", distNm: 168, etaHrs: 14.0, speedKn: 9.5, iceConc: "6.5/10" },
-  { id: "WP4", name: "Weddell Entry",         lat: "64°52.0'S", lon: "56°15.0'W", distNm: 285, etaHrs: 25.2, speedKn: 7.0, iceConc: "7.2/10" },
-  { id: "WP5", name: "Weddell Outpost Alpha", lat: "65°30.0'S", lon: "56°00.0'W", distNm: 445, etaHrs: 37.1, speedKn: 12,  iceConc: "3.1/10" },
-];
-
 export default function ReportsPage() {
   const { mission, vessel, selectedRoute } = useMission();
   const generatedAt = new Date().toISOString().slice(0, 16).replace("T", " ") + " UTC";
@@ -91,7 +83,7 @@ export default function ReportsPage() {
             <div className="rounded-lg border border-border p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Route size={14} className="text-text-muted" />
-                <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">Selected Route</h2>
+                <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">Selected Route Profile</h2>
               </div>
               <p className="font-bold text-navy-900">{selectedRoute.name}</p>
               <p className="text-xs text-text-muted mt-0.5">{selectedRoute.tradeOff}</p>
@@ -99,16 +91,18 @@ export default function ReportsPage() {
                 {[
                   ["Distance", formatNauticalMiles(selectedRoute.distanceNm)],
                   ["ETA", formatHours(selectedRoute.etaHours)],
-                  ["Fuel", formatFuelTons(selectedRoute.fuelTons)],
-                  ["Avg risk", `${selectedRoute.averageRiskScore}/100`],
-                  ["Max risk", `${selectedRoute.maxRiskScore}/100`],
-                  ["Compat.", selectedRoute.compatibility],
+                  ["Fuel Burn", formatFuelTons(selectedRoute.fuelTons)],
+                  ["Avg / Max Risk", `${selectedRoute.averageRiskScore} / ${selectedRoute.maxRiskScore}`],
+                  ["POLARIS RIO", `${selectedRoute.rio.scoreFormatted} (${selectedRoute.rio.status})`],
+                  ["Peak Ice Conc", `${selectedRoute.iceExposure.peakIceConcTenths}/10 (${selectedRoute.iceExposure.peakLocation})`],
                 ].map(([k, v]) => (
                   <div key={k as string}>
                     <dt className="text-text-subtle">{k}</dt>
                     <dd className={cn("font-semibold",
-                      k === "Avg risk" || k === "Max risk"
-                        ? `border rounded px-1 ${riskBadge(parseInt(v as string))}`
+                      k === "Avg / Max Risk"
+                        ? `border rounded px-1 ${riskBadge(selectedRoute.averageRiskScore)}`
+                        : k === "POLARIS RIO" && selectedRoute.rio.status === "PASS"
+                        ? "text-risk-low"
                         : "text-navy-900"
                     )}>{v}</dd>
                   </div>
@@ -117,32 +111,43 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          {/* Waypoint Schedule */}
+          {/* Dynamic Waypoint Schedule */}
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Anchor size={14} className="text-text-muted" />
-              <h2 className="text-sm font-semibold text-navy-900">Waypoint Schedule</h2>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Anchor size={14} className="text-text-muted" />
+                <h2 className="text-sm font-semibold text-navy-900">
+                  Waypoint Schedule — {selectedRoute.name} ({selectedRoute.waypoints.length} Waypoints)
+                </h2>
+              </div>
+              <span className="text-xs font-mono text-text-muted">Total: {formatNauticalMiles(selectedRoute.distanceNm)}</span>
             </div>
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-border bg-surface2 text-left">
-                    {["WP","Name","Latitude","Longitude","Leg (NM)","ETA (hrs)","Speed (kn)","Ice Conc."].map(h => (
-                      <th key={h} className="px-4 py-2.5 font-semibold text-text-muted">{h}</th>
+                    {["WP", "Name", "Latitude", "Longitude", "Leg (NM)", "Cumul (NM)", "Speed Cap", "Ice Conc", "Risk", "Operational Note"].map((h) => (
+                      <th key={h} className="px-3.5 py-2.5 font-semibold text-text-muted">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {WAYPOINTS.map((wp, i) => (
+                  {selectedRoute.waypoints.map((wp, i) => (
                     <tr key={wp.id} className={cn("border-b border-border", i % 2 === 1 ? "bg-surface2" : "")}>
-                      <td className="px-4 py-2.5 font-mono font-bold text-navy-900">{wp.id}</td>
-                      <td className="px-4 py-2.5 font-medium text-navy-900">{wp.name}</td>
-                      <td className="px-4 py-2.5 font-mono text-text-secondary">{wp.lat}</td>
-                      <td className="px-4 py-2.5 font-mono text-text-secondary">{wp.lon}</td>
-                      <td className="px-4 py-2.5 font-mono text-text-secondary">{wp.distNm}</td>
-                      <td className="px-4 py-2.5 font-mono text-text-secondary">{wp.etaHrs.toFixed(1)}</td>
-                      <td className="px-4 py-2.5 font-mono text-text-secondary">{wp.speedKn > 0 ? `${wp.speedKn} kn` : "—"}</td>
-                      <td className="px-4 py-2.5 font-mono text-text-secondary">{wp.iceConc}</td>
+                      <td className="px-3.5 py-2.5 font-mono font-bold text-navy-900">{wp.id.toUpperCase()}</td>
+                      <td className="px-3.5 py-2.5 font-medium text-navy-900">{wp.name}</td>
+                      <td className="px-3.5 py-2.5 font-mono text-text-secondary">{wp.lat}</td>
+                      <td className="px-3.5 py-2.5 font-mono text-text-secondary">{wp.lon}</td>
+                      <td className="px-3.5 py-2.5 font-mono text-text-secondary">{wp.distNm} NM</td>
+                      <td className="px-3.5 py-2.5 font-mono text-navy-900 font-bold">{wp.cumulativeNm} NM</td>
+                      <td className="px-3.5 py-2.5 font-mono text-text-secondary">{wp.speedLimitKn} kn</td>
+                      <td className="px-3.5 py-2.5 font-mono text-text-secondary">{wp.iceConcTenths}/10</td>
+                      <td className="px-3.5 py-2.5 font-mono">
+                        <span className={cn("border rounded px-1.5 py-0.5 text-[10px] font-bold", riskBadge(wp.riskScore))}>
+                          {wp.riskScore}
+                        </span>
+                      </td>
+                      <td className="px-3.5 py-2.5 text-text-muted font-sans text-[11px]">{wp.hazardNote}</td>
                     </tr>
                   ))}
                 </tbody>

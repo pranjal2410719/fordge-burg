@@ -40,6 +40,7 @@ export default function IcebergsPage() {
 
   return (
     <AppShell>
+      <div className="animate-fade-in">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl font-bold text-navy-900">Iceberg Intelligence</h1>
@@ -184,6 +185,7 @@ export default function IcebergsPage() {
           CPA alerts fire when projected closest point of approach is below this threshold.
           Uncertainty corridors increase at 2.2× (3D) and 4.8× (7D) horizon multipliers.
         </p>
+      </div>
       </div>
     </AppShell>
   );

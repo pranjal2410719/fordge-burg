@@ -1,7 +1,7 @@
-# BRIEFING — 2026-09-17T17:24:47Z
+# BRIEFING — 2026-09-18T12:52:41Z
 
 ## Mission
-Monitor and route frontend enhancements for mission planner, risk tab, settings, and hazard pages to completion with mandatory independent victory audit.
+Monitor and route frontend dynamic route overview, mission planner vanishing transition, and risk/mitigation alignment to completion with mandatory independent victory audit.
 
 ## 🔒 My Identity
 - Archetype: sentinel
@@ -9,7 +9,8 @@ Monitor and route frontend enhancements for mission planner, risk tab, settings,
 - Orchestrator: 1ddf241f-5b01-48ad-a4f9-2352c4047a42
 - Victory Auditor: to be spawned on victory claim
 - Orchestrator Gen 2: 8a311fe0-7c09-47d2-ac5b-16a651d792a3 (inactive)
-- Orchestrator Gen 3: 49650037-4209-4e6a-af88-63e25a17dc99 (active)
+- Orchestrator Gen 3: 49650037-4209-4e6a-af88-63e25a17dc99 (inactive)
+- Orchestrator R2_1: f4237812-3daf-4174-8bda-b2f2b20ba2ac (active)
 
 ## 🔒 Key Constraints
 - No technical decisions — relay only
@@ -19,16 +20,16 @@ Monitor and route frontend enhancements for mission planner, risk tab, settings,
 
 ## Routing Decision
 - **Route**: General (teamwork_preview_orchestrator)
-- **Rationale**: Multi-part frontend UI/UX and animation enhancement project covering 4 distinct requirements (mission planner, risk tab, settings, hazard pages) with requested standard team. Does not qualify for document review, math/proof, or SWE light.
+- **Rationale**: Multi-part frontend feature development (dynamic route telemetry sync across /routes & components, mission planner vanishing transition flow with 3 unified triggers, and dynamic risk/mitigation calculations) requested with standard team. Does not qualify for document review, math/proof, or SWE light.
 
 ## User Context
-- **Last user request**: Enhance UI, UX, and animations of frontend application (mission planner, risk tab, settings, hazard pages) for polished demo.
+- **Last user request**: Dynamic route overview across pathways, mission planner vanishing transition flow with unified triggers, and real-time risk/mitigation alignment.
 - **Pending clarifications**: none
 - **Delivered results**: none
 
 ## Project Status
-- **Phase**: in progress (Gen 3 active)
-- **Active Orchestrator**: 49650037-4209-4e6a-af88-63e25a17dc99 (directory: .agents/teamwork_preview_orchestrator_gen3)
+- **Phase**: in progress (Orchestrator R2_1 active)
+- **Active Orchestrator**: f4237812-3daf-4174-8bda-b2f2b20ba2ac (directory: .agents/teamwork_preview_orchestrator_r2_1)
 - **Cron 1 (Progress)**: task-34 (*/8 * * * *)
 - **Cron 2 (Liveness)**: task-36 (*/10 * * * *)
 
@@ -39,5 +40,6 @@ Monitor and route frontend enhancements for mission planner, risk tab, settings,
 
 ## Artifact Index
 - /home/dev/Desktop/projects/fb/frontend/.agents/ORIGINAL_REQUEST.md — Authoritative user request log
-- /home/dev/Desktop/projects/fb/frontend/ORIGINAL_REQUEST.md — Root copy of original user request
-- /home/dev/Desktop/projects/fb/frontend/.agents/teamwork_preview_orchestrator_gen3/progress.md — Active orchestrator progress log
+- /home/dev/Desktop/projects/fb/frontend/ORIGINAL_REQUEST.md — Project root copy of user request
+- /home/dev/Desktop/projects/fb/frontend/.agents/teamwork_preview_orchestrator_r2_1/DISPATCH.md — Orchestrator dispatch briefing
+- /home/dev/Desktop/projects/fb/frontend/.agents/teamwork_preview_orchestrator_r2_1/progress.md — Active orchestrator progress log

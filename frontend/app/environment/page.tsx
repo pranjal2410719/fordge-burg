@@ -51,6 +51,7 @@ export default function EnvironmentPage() {
 
   return (
     <AppShell>
+      <div className="animate-fade-in">
       {/* Header */}
       <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
         <div>
@@ -178,6 +179,7 @@ export default function EnvironmentPage() {
       {/* Map */}
       <div className="mt-4">
         <SimpleMap selectedRouteId={selectedRouteId} onSelectRoute={setSelectedRouteId} />
+      </div>
       </div>
     </AppShell>
   );

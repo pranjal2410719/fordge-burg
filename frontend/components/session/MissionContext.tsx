@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   BASELINE_ROUTES,
   DEFAULTS,
@@ -36,15 +36,58 @@ interface MissionContextValue {
 
 const MissionContext = createContext<MissionContextValue | null>(null);
 
+export const ROUTE_STORAGE_KEY = "fordge_selected_route_id";
+
+const VALID_ROUTE_IDS: readonly RouteId[] = ["shortest", "safest", "fuel_efficient", "balanced"] as const;
+
+export function getPersistedRouteId(): RouteId | null {
+  if (typeof window === "undefined" || typeof window.sessionStorage === "undefined") {
+    return null;
+  }
+  try {
+    const stored = window.sessionStorage.getItem(ROUTE_STORAGE_KEY);
+    if (stored && VALID_ROUTE_IDS.includes(stored as RouteId)) {
+      return stored as RouteId;
+    }
+  } catch {
+    // Ignore storage read errors (e.g. strict security settings)
+  }
+  return null;
+}
+
+export function setPersistedRouteId(id: RouteId): void {
+  if (typeof window === "undefined" || typeof window.sessionStorage === "undefined") {
+    return;
+  }
+  try {
+    window.sessionStorage.setItem(ROUTE_STORAGE_KEY, id);
+  } catch {
+    // Ignore storage write errors
+  }
+}
+
 export function MissionProvider({ children }: { children: React.ReactNode }) {
   const [missionId, setMissionId] = useState(DEFAULTS.missionId);
   const [vesselId, setVesselId] = useState(DEFAULTS.vesselId);
   const [forecastHorizon, setHorizon] = useState<ForecastHorizon>(DEFAULTS.horizon);
   const [preference, setPreference] = useState<OptimizationPreference>(DEFAULTS.preference);
-  const [selectedRouteId, setSelectedRouteId] = useState<RouteId>(DEFAULTS.routeId);
+  const [selectedRouteId, setSelectedRouteIdState] = useState<RouteId>(DEFAULTS.routeId);
   const [simulationStatus, setStatus] = useState<SimulationStatus>("idle");
   const [simulationProgress, setProgress] = useState(0);
   const timers = useRef<NodeJS.Timeout[]>([]);
+
+  // SSR-safe hydration of selectedRouteId from sessionStorage
+  useEffect(() => {
+    const persisted = getPersistedRouteId();
+    if (persisted) {
+      setSelectedRouteIdState(persisted);
+    }
+  }, []);
+
+  const setSelectedRouteId = useCallback((id: RouteId) => {
+    setSelectedRouteIdState(id);
+    setPersistedRouteId(id);
+  }, []);
 
   const mission = useMemo(
     () => MISSIONS.find((m) => m.id === missionId) ?? MISSIONS[0],

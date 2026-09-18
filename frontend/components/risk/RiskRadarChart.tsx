@@ -190,7 +190,7 @@ export function RiskRadarChart({ routeId, vesselIceClass }: RiskRadarChartProps)
             const labelY = CY + labelR * Math.sin(v.theta);
 
             // Determine text anchor based on angle
-            let textAnchor = "middle";
+            let textAnchor: "start" | "middle" | "end" = "middle";
             if (Math.cos(v.theta) > 0.3) textAnchor = "start";
             else if (Math.cos(v.theta) < -0.3) textAnchor = "end";
 

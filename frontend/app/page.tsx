@@ -43,7 +43,7 @@ export default function LandingPage() {
 
   return (
     <AppShell>
-      <div className="mx-auto max-w-2xl px-2 py-12">
+      <div className="mx-auto max-w-2xl px-2 py-12 animate-fade-in">
         {/* Hero */}
         <div className="text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-1.5 text-xs font-semibold text-blue-600 mb-6">

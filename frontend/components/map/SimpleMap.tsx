@@ -34,7 +34,7 @@ const ROUTE_PATHS: Record<RouteId, [number, number][]> = {
   ],
 };
 
-const ROUTE_COLORS: Record<RouteId, string> = {
+export const ROUTE_COLORS: Record<RouteId, string> = {
   shortest:      "#c0392b",
   safest:        "#1e8449",
   fuel_efficient:"#d4910a",
