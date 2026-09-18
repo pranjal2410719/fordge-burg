@@ -1,0 +1,58 @@
+--- a/package.json
++++ b/package.json
+@@ -22,6 +22,7 @@
+     "@types/react": "^19",
+     "@types/react-dom": "^19",
+     "tailwindcss": "^4",
++    "tsx": "^4.19.2",
+     "typescript": "^5"
+   }
+ }
+--- a/tests/data_and_utils.test.ts
++++ b/tests/data_and_utils.test.ts
+@@ -1,6 +1,5 @@
+ import { describe, it } from 'node:test';
+ import assert from 'node:assert/strict';
+-import * as DataModule from '../lib/data';
+ import {
+   VESSELS,
+   MISSIONS,
+@@ -160,38 +159,6 @@
+     });
+   });
+ 
+-  describe('HAZARD_ZONES Model Specification', () => {
+-    it('validates hazard zone data schema and dynamic module export if available', () => {
+-      const rawData = DataModule as Record<string, unknown>;
+-      if (Array.isArray(rawData.HAZARD_ZONES)) {
+-        const hazardZones = rawData.HAZARD_ZONES as Array<Record<string, unknown>>;
+-        assert.ok(hazardZones.length > 0, 'HAZARD_ZONES array should not be empty');
+-        for (const hz of hazardZones) {
+-          assert.ok(typeof hz.id === 'string');
+-          assert.ok(typeof hz.name === 'string');
+-          assert.ok(typeof hz.riskScore === 'number' && hz.riskScore >= 0 && hz.riskScore <= 100);
+-        }
+-      } else {
+-        // Verify hazard zone interface requirements conform to project specifications
+-        interface ExpectedHazardZone {
+-          id: string;
+-          name: string;
+-          type: string;
+-          riskScore: number;
+-          severity: 'Critical' | 'High' | 'Moderate' | 'Low';
+-        }
+-        const sampleHazard: ExpectedHazardZone = {
+-          id: 'H1',
+-          name: 'Antarctic Sound Pressure Ridge',
+-          type: 'Pressure Ridge',
+-          riskScore: 78,
+-          severity: 'High',
+-        };
+-        assert.strictEqual(sampleHazard.id, 'H1');
+-        assert.ok(sampleHazard.riskScore >= 0 && sampleHazard.riskScore <= 100);
+-      }
+-    });
+-  });
+ });
+ 
+ describe('Utility Functions (lib/utils.ts)', () => {

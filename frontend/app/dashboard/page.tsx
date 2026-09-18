@@ -90,7 +90,7 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-600 ring-1 ring-inset ring-blue-600/10">Active Mission</span>
-            <span className="text-sm font-medium text-text-subtle">{simulationStatus === 'ready' ? 'Live' : 'Planning'}</span>
+            <span className="text-sm font-medium text-text-subtle">{simulationStatus === 'completed' ? 'Live' : 'Planning'}</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-navy-900">{mission.name}</h1>
           <p className="mt-1 flex items-center gap-2 text-sm text-text-muted">

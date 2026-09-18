@@ -1,0 +1,303 @@
+diff --git a/package.json b/package.json
+index 806268f..b123456 100644
+--- a/package.json
++++ b/package.json
+@@ -23,6 +23,7 @@
+     "@types/react": "^19",
+     "@types/react-dom": "^19",
+     "tailwindcss": "^4",
++    "tsx": "^4.22.4",
+     "typescript": "^5"
+   }
+ }
+diff --git a/lib/data.ts b/lib/data.ts
+index e548e6c..f678901 100644
+--- a/lib/data.ts
++++ b/lib/data.ts
+@@ -83,3 +83,78 @@ export const DEFAULTS = {
+   routeId: "balanced" as RouteId,
+ };
++
++export type HazardZoneSeverity = "Critical" | "High" | "Moderate" | "Low";
++
++export interface HazardFactor {
++  label: string;
++  score: number;
++}
++
++export interface HazardZone {
++  id: string;
++  name: string;
++  type: string;
++  riskScore: number;
++  severity: HazardZoneSeverity;
++  factors: HazardFactor[];
++  recommendation: string;
++  polygon?: [number, number][];
++}
++
++export const HAZARD_ZONES: HazardZone[] = [
++  {
++    id: "H1",
++    name: "Antarctic Sound Pressure Ridge",
++    type: "Pressure Ridge",
++    riskScore: 78,
++    severity: "High",
++    factors: [
++      { label: "Ice pressure", score: 85 },
++      { label: "Drift dynamics", score: 72 },
++      { label: "Vessel exposure", score: 68 },
++    ],
++    recommendation: "Avoid during spring ice movement. Icebreaker escort recommended for PC4+ hull class.",
++    polygon: [[-63.5, -61.0], [-63.5, -60.0], [-64.0, -60.0], [-64.0, -61.0]],
++  },
++  {
++    id: "H2",
++    name: "Joinville Bank Grounding Shallows",
++    type: "Grounding / Shoal",
++    riskScore: 58,
++    severity: "Moderate",
++    factors: [
++      { label: "Depth clearance", score: 65 },
++      { label: "Survey currency", score: 50 },
++      { label: "Drift overlay", score: 55 },
++    ],
++    recommendation: "Reduce speed and post continuous echo sounder watch. Do not transit in poor visibility.",
++    polygon: [[-63.0, -56.0], [-63.0, -55.0], [-63.5, -55.0], [-63.5, -56.0]],
++  },
++  {
++    id: "H3",
++    name: "Weddell Multi-Year Ice",
++    type: "Multi-Year Ice",
++    riskScore: 82,
++    severity: "High",
++    factors: [
++      { label: "Ice thickness", score: 90 },
++      { label: "Compaction", score: 80 },
++      { label: "Besetment prob.", score: 75 },
++    ],
++    recommendation: "Mandatory speed throttle × 0.75. Day-light transit only. PC2 class minimum.",
++    polygon: [[-64.0, -58.5], [-64.0, -57.5], [-64.5, -57.5], [-64.5, -58.5]],
++  },
++  {
++    id: "H4",
++    name: "Larsen Fast Ice",
++    type: "Fast Ice",
++    riskScore: 95,
++    severity: "Critical",
++    factors: [
++      { label: "Ice solidity", score: 98 },
++      { label: "Break-up risk", score: 88 },
++      { label: "Route blockage", score: 95 },
++    ],
++    recommendation: "RESTRICTED — icebreaker escort required. Speed ≤ 2.5 kn or vessel ice-speed limit.",
++    polygon: [[-65.0, -61.5], [-65.0, -60.0], [-66.0, -60.0], [-66.0, -61.5]],
++  },
++  {
++    id: "H5",
++    name: "Erebus Drift Field",
++    type: "Drift Ice Field",
++    riskScore: 52,
++    severity: "Moderate",
++    factors: [
++      { label: "Floe density", score: 60 },
++      { label: "Drift speed", score: 45 },
++      { label: "Visibility", score: 55 },
++    ],
++    recommendation: "Post ice watch. Reduce speed to ice transit limit. Monitor trajectory closely.",
++    polygon: [[-64.8, -57.0], [-64.8, -55.5], [-65.5, -55.5], [-65.5, -57.0]],
++  },
++  {
++    id: "H6",
++    name: "Bransfield Open-Lead Fairway",
++    type: "Open Water Lead",
++    riskScore: 20,
++    severity: "Low",
++    factors: [
++      { label: "Ice exposure", score: 18 },
++      { label: "Sea state", score: 22 },
++      { label: "Vessel clearance", score: 20 },
++    ],
++    recommendation: "Preferred transit corridor. Monitor lead closure. Normal operational speed.",
++    polygon: [[-62.5, -60.5], [-62.5, -58.5], [-63.0, -58.5], [-63.0, -60.5]],
++  },
++];
+diff --git a/app/hazards/page.tsx b/app/hazards/page.tsx
+index 89abcde..1234567 100644
+--- a/app/hazards/page.tsx
++++ b/app/hazards/page.tsx
+@@ -4,71 +4,8 @@ import { AppShell } from "@/components/layout/AppShell";
+ import { useMission } from "@/components/session/MissionContext";
++import { HAZARD_ZONES, type HazardZone } from "@/lib/data";
+ import { cn, riskBadge, riskBar } from "@/lib/utils";
+ import { useState } from "react";
+-
+-interface HazardZone {
+-  id: string;
+-  name: string;
+-  type: string;
+-  riskScore: number;
+-  severity: "Critical" | "High" | "Moderate" | "Low";
+-  factors: { label: string; score: number }[];
+-  recommendation: string;
+-}
+-
+-const HAZARD_ZONES: HazardZone[] = [
+-  {
+-    id: "H1", name: "Antarctic Sound Pressure Ridge", type: "Pressure Ridge", riskScore: 78, severity: "High",
+-    factors: [
+-      { label: "Ice pressure",    score: 85 },
+-      { label: "Drift dynamics",  score: 72 },
+-      { label: "Vessel exposure", score: 68 },
+-    ],
+-    recommendation: "Avoid during spring ice movement. Icebreaker escort recommended for PC4+ hull class.",
+-  },
+-  {
+-    id: "H2", name: "Joinville Bank Grounding Shallows", type: "Grounding / Shoal", riskScore: 58, severity: "Moderate",
+-    factors: [
+-      { label: "Depth clearance", score: 65 },
+-      { label: "Survey currency", score: 50 },
+-      { label: "Drift overlay",   score: 55 },
+-    ],
+-    recommendation: "Reduce speed and post continuous echo sounder watch. Do not transit in poor visibility.",
+-  },
+-  {
+-    id: "H3", name: "Weddell Multi-Year Ice", type: "Multi-Year Ice", riskScore: 82, severity: "High",
+-    factors: [
+-      { label: "Ice thickness",   score: 90 },
+-      { label: "Compaction",      score: 80 },
+-      { label: "Besetment prob.", score: 75 },
+-    ],
+-    recommendation: "Mandatory speed throttle × 0.75. Day-light transit only. PC2 class minimum.",
+-  },
+-  {
+-    id: "H4", name: "Larsen Fast Ice", type: "Fast Ice", riskScore: 95, severity: "Critical",
+-    factors: [
+-      { label: "Ice solidity",    score: 98 },
+-      { label: "Break-up risk",   score: 88 },
+-      { label: "Route blockage",  score: 95 },
+-    ],
+-    recommendation: "RESTRICTED — icebreaker escort required. Speed ≤ 2.5 kn or vessel ice-speed limit.",
+-  },
+-  {
+-    id: "H5", name: "Erebus Drift Field", type: "Drift Ice Field", riskScore: 52, severity: "Moderate",
+-    factors: [
+-      { label: "Floe density",    score: 60 },
+-      { label: "Drift speed",     score: 45 },
+-      { label: "Visibility",      score: 55 },
+-    ],
+-    recommendation: "Post ice watch. Reduce speed to ice transit limit. Monitor trajectory closely.",
+-  },
+-  {
+-    id: "H6", name: "Bransfield Open-Lead Fairway", type: "Open Water Lead", riskScore: 20, severity: "Low",
+-    factors: [
+-      { label: "Ice exposure",    score: 18 },
+-      { label: "Sea state",       score: 22 },
+-      { label: "Vessel clearance",score: 20 },
+-    ],
+-    recommendation: "Preferred transit corridor. Monitor lead closure. Normal operational speed.",
+-  },
+-];
+diff --git a/tests/data_and_utils.test.ts b/tests/data_and_utils.test.ts
+index cba9876..fedcba9 100644
+--- a/tests/data_and_utils.test.ts
++++ b/tests/data_and_utils.test.ts
+@@ -1,6 +1,5 @@
+ import { describe, it } from 'node:test';
+ import assert from 'node:assert/strict';
+-import * as DataModule from '../lib/data';
+ import {
+   VESSELS,
+   MISSIONS,
+@@ -8,10 +7,13 @@ import {
+   MITIGATIONS,
+   DEFAULTS,
++  HAZARD_ZONES,
+   type Vessel,
+   type Mission,
+   type RouteAlternative,
+   type Mitigation,
++  type HazardZone,
++  type HazardZoneSeverity,
+ } from '../lib/data';
+@@ -162,33 +164,50 @@ describe('Data Models (lib/data.ts)', () => {
+   describe('HAZARD_ZONES Model Specification', () => {
+-    it('validates hazard zone data schema and dynamic module export if available', () => {
+-      const rawData = DataModule as Record<string, unknown>;
+-      if (Array.isArray(rawData.HAZARD_ZONES)) {
+-        const hazardZones = rawData.HAZARD_ZONES as Array<Record<string, unknown>>;
+-        assert.ok(hazardZones.length > 0, 'HAZARD_ZONES array should not be empty');
+-        for (const hz of hazardZones) {
+-          assert.ok(typeof hz.id === 'string');
+-          assert.ok(typeof hz.name === 'string');
+-          assert.ok(typeof hz.riskScore === 'number' && hz.riskScore >= 0 && hz.riskScore <= 100);
+-        }
+-      } else {
+-        // Verify hazard zone interface requirements conform to project specifications
+-        interface ExpectedHazardZone {
+-          id: string;
+-          name: string;
+-          type: string;
+-          riskScore: number;
+-          severity: 'Critical' | 'High' | 'Moderate' | 'Low';
+-        }
+-        const sampleHazard: ExpectedHazardZone = {
+-          id: 'H1',
+-          name: 'Antarctic Sound Pressure Ridge',
+-          type: 'Pressure Ridge',
+-          riskScore: 78,
+-          severity: 'High',
+-        };
+-        assert.strictEqual(sampleHazard.id, 'H1');
+-        assert.ok(sampleHazard.riskScore >= 0 && sampleHazard.riskScore <= 100);
+-      }
++    it('should export exactly 6 hazard zones with valid schemas, distinct IDs, and scores', () => {
++      assert.strictEqual(HAZARD_ZONES.length, 6, 'HAZARD_ZONES must contain exactly 6 zones');
++      const validSeverities: HazardZoneSeverity[] = ['Critical', 'High', 'Moderate', 'Low'];
++      const seenIds = new Set<string>();
++
++      for (const hz of HAZARD_ZONES) {
++        assert.ok(hz.id && typeof hz.id === 'string', 'Hazard zone must have a string id');
++        assert.ok(!seenIds.has(hz.id), `Duplicate hazard zone id detected: ${hz.id}`);
++        seenIds.add(hz.id);
++
++        assert.ok(hz.name && typeof hz.name === 'string', `Hazard zone ${hz.id} must have a name`);
++        assert.ok(hz.type && typeof hz.type === 'string', `Hazard zone ${hz.id} must have a type`);
++        assert.ok(
++          typeof hz.riskScore === 'number' && hz.riskScore >= 0 && hz.riskScore <= 100,
++          `Hazard zone ${hz.id} riskScore must be between 0 and 100, got ${hz.riskScore}`
++        );
++        assert.ok(
++          validSeverities.includes(hz.severity),
++          `Hazard zone ${hz.id} has invalid severity: ${hz.severity}`
++        );
++        assert.ok(
++          Array.isArray(hz.factors) && hz.factors.length > 0,
++          `Hazard zone ${hz.id} must have a non-empty factors array`
++        );
++        for (const factor of hz.factors) {
++          assert.ok(factor.label && typeof factor.label === 'string', 'Factor must have a label');
++          assert.ok(
++            typeof factor.score === 'number' && factor.score >= 0 && factor.score <= 100,
++            `Factor score must be 0-100, got ${factor.score}`
++          );
++        }
++        assert.ok(
++          typeof hz.recommendation === 'string' && hz.recommendation.length > 0,
++          `Hazard zone ${hz.id} must have an actionable recommendation`
++        );
++      }
++    });
++
++    it('should verify critical zone H4 (Larsen Fast Ice) and low-risk corridor H6', () => {
++      const larsen = HAZARD_ZONES.find((h) => h.id === 'H4');
++      assert.ok(larsen, 'H4 Larsen Fast Ice must exist');
++      assert.strictEqual(larsen.severity, 'Critical');
++      assert.strictEqual(larsen.riskScore, 95);
++
++      const fairway = HAZARD_ZONES.find((h) => h.id === 'H6');
++      assert.ok(fairway, 'H6 Bransfield Open-Lead Fairway must exist');
++      assert.strictEqual(fairway.severity, 'Low');
++      assert.strictEqual(fairway.riskScore, 20);
+     });
+   });
