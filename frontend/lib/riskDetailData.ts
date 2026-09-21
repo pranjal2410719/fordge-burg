@@ -73,6 +73,7 @@ export interface RiskReductionMetric {
 export interface MitigationSOPData {
   id: string;
   title: string;
+  status: "mandatory" | "recommended" | "advisory";
   category: "Navigation" | "Machinery" | "Bridge Watchkeeping" | "Bunkers" | "Safe Refuge";
   phases: MitigationSOPPhase[];
   responsibleRoles: string[];
@@ -84,6 +85,14 @@ export interface MitigationSOPData {
   };
   applicability: VesselClassApplicability[];
   riskReduction: RiskReductionMetric;
+  impactDimensions: {
+    riskReduction: number;
+    confidence: number;
+    costEfficiency: number;
+    implementationSpeed: number;
+    vesselCoverage: number;
+    fleetReadiness: number;
+  };
 }
 
 // ─── Consequence Details Map ──────────────────────────────────────────────────
@@ -373,6 +382,7 @@ export const MITIGATION_SOPS_MAP: Record<string, MitigationSOPData> = {
   m1: {
     id: "m1",
     title: "Reduce speed in pack ice",
+    status: "mandatory",
     category: "Navigation",
     phases: [
       {
@@ -425,11 +435,20 @@ export const MITIGATION_SOPS_MAP: Record<string, MitigationSOPData> = {
       confidence: "95% POLARIS Empirical Baseline",
       coBenefits: ["Reduces propeller blade cavitation shock", "Conserves fuel by avoiding friction stagnation"],
     },
+    impactDimensions: {
+      riskReduction: 82,
+      confidence: 95,
+      costEfficiency: 70,
+      implementationSpeed: 85,
+      vesselCoverage: 90,
+      fleetReadiness: 78,
+    },
   },
 
   m2: {
     id: "m2",
     title: "Maintain 5.0 NM iceberg standoff",
+    status: "mandatory",
     category: "Navigation",
     phases: [
       {
@@ -479,11 +498,20 @@ export const MITIGATION_SOPS_MAP: Record<string, MitigationSOPData> = {
       confidence: "99% Hydrodynamic Empirical Model",
       coBenefits: ["Eliminates growler hull breach danger", "Prevents sonar and echo-sounder acoustic clutter"],
     },
+    impactDimensions: {
+      riskReduction: 95,
+      confidence: 99,
+      costEfficiency: 60,
+      implementationSpeed: 75,
+      vesselCoverage: 100,
+      fleetReadiness: 72,
+    },
   },
 
   m3: {
     id: "m3",
     title: "Daylight transit of chokepoints",
+    status: "recommended",
     category: "Bridge Watchkeeping",
     phases: [
       {
@@ -533,11 +561,20 @@ export const MITIGATION_SOPS_MAP: Record<string, MitigationSOPData> = {
       confidence: "92% Navigation Audit Baseline",
       coBenefits: ["Enables visual identification of multi-year floe color hues", "Prevents searchlight backscatter blindness in snow flurry"],
     },
+    impactDimensions: {
+      riskReduction: 60,
+      confidence: 92,
+      costEfficiency: 95,
+      implementationSpeed: 90,
+      vesselCoverage: 75,
+      fleetReadiness: 88,
+    },
   },
 
   m4: {
     id: "m4",
     title: "Extra lookout / ice watch",
+    status: "recommended",
     category: "Bridge Watchkeeping",
     phases: [
       {
@@ -586,11 +623,20 @@ export const MITIGATION_SOPS_MAP: Record<string, MitigationSOPData> = {
       confidence: "95% Empirical Lookout Trial",
       coBenefits: ["Quadruples detection range of low-freeboard growlers", "Provides immediate warning of lead closing trends"],
     },
+    impactDimensions: {
+      riskReduction: 55,
+      confidence: 95,
+      costEfficiency: 90,
+      implementationSpeed: 80,
+      vesselCoverage: 85,
+      fleetReadiness: 82,
+    },
   },
 
   m5: {
     id: "m5",
     title: "Escort on standby for OpenWater hulls",
+    status: "advisory",
     category: "Navigation",
     phases: [
       {
@@ -640,11 +686,20 @@ export const MITIGATION_SOPS_MAP: Record<string, MitigationSOPData> = {
       confidence: "98% Escort Convoy Registry",
       coBenefits: ["Guarantees immediate ice extraction and towing", "Provides pre-broken low-resistance channel"],
     },
+    impactDimensions: {
+      riskReduction: 90,
+      confidence: 98,
+      costEfficiency: 35,
+      implementationSpeed: 40,
+      vesselCoverage: 45,
+      fleetReadiness: 50,
+    },
   },
 
   m6: {
     id: "m6",
     title: "Fuel reserve margin check",
+    status: "recommended",
     category: "Bunkers",
     phases: [
       {
@@ -694,11 +749,20 @@ export const MITIGATION_SOPS_MAP: Record<string, MitigationSOPData> = {
       confidence: "96% Bunker Safety Log",
       coBenefits: ["Guarantees 96-hour hotel load survival margin", "Prevents fuel wax precipitation in fuel lines"],
     },
+    impactDimensions: {
+      riskReduction: 65,
+      confidence: 96,
+      costEfficiency: 75,
+      implementationSpeed: 88,
+      vesselCoverage: 100,
+      fleetReadiness: 90,
+    },
   },
 
   m7: {
     id: "m7",
     title: "Contingency anchorage identified",
+    status: "advisory",
     category: "Safe Refuge",
     phases: [
       {
@@ -747,6 +811,14 @@ export const MITIGATION_SOPS_MAP: Record<string, MitigationSOPData> = {
       percentageReduction: "-55%",
       confidence: "94% Marine Emergency Registry",
       coBenefits: ["Provides shelter from 50+ kn katabatic storms", "Enables safe hull and propeller inspection at anchor"],
+    },
+    impactDimensions: {
+      riskReduction: 50,
+      confidence: 94,
+      costEfficiency: 80,
+      implementationSpeed: 65,
+      vesselCoverage: 95,
+      fleetReadiness: 70,
     },
   },
 };

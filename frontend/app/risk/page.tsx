@@ -27,6 +27,7 @@ import {
 } from "@/components/risk/MitigationFilters";
 import { ConsequenceModal } from "@/components/risk/ConsequenceModal";
 import { MitigationModal } from "@/components/risk/MitigationModal";
+import { MitigationAnalytics } from "@/components/risk/MitigationAnalytics";
 import { type ConsequenceItem } from "@/lib/riskExport";
 
 const STATUS_STYLE: Record<string, string> = {
@@ -280,6 +281,11 @@ export default function RiskPage() {
           onSelectRoute={(id: RouteId) => setSelectedRouteId(id)}
           routes={routes}
         />
+      </div>
+
+      {/* Mitigation Analytics Dashboard */}
+      <div className="mb-6">
+        <MitigationAnalytics activeVesselClass={vessel.iceClass} acked={acked} />
       </div>
 
       {/* Mitigation Checklist Section */}
