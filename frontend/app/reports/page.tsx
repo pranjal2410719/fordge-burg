@@ -37,7 +37,7 @@ export default function ReportsPage() {
                 <span className="text-sm font-bold">fB</span>
               </div>
               <div>
-                <p className="text-lg font-bold">fordgeBurg</p>
+                <p className="text-lg font-bold">fordberg</p>
                 <p className="text-xs text-blue-200">Antarctic Maritime Decision Support System</p>
               </div>
             </div>

@@ -53,7 +53,7 @@ export function generateRiskCsv(payload: RiskTelemetryPayload): string {
   const lines: string[] = [];
 
   // Section 1: Header Metadata
-  lines.push("# FORGEBURG ANTARCTIC MARITIME DSS - RISK TELEMETRY EXPORT");
+  lines.push("# FORDBERG ANTARCTIC MARITIME DSS - RISK TELEMETRY EXPORT");
   lines.push(`Export Timestamp,${ts}`);
   lines.push(`Document Reference,${docRef}`);
   lines.push(`Classification,ADVISORY - NOT FOR AUTONOMOUS NAVIGATION (SOLAS Ch. V / IMO Polar Code)`);
@@ -148,7 +148,7 @@ export function generateRiskJson(payload: RiskTelemetryPayload): string {
   const allRoutes = payload.allRoutes || BASELINE_ROUTES;
 
   const data = {
-    system: "fordgeBurg Antarctic Maritime Decision Support System",
+    system: "fordberg Antarctic Maritime Decision Support System",
     documentRef: docRef,
     exportTimestamp: ts,
     classification: "ADVISORY - NOT FOR AUTONOMOUS NAVIGATION (SOLAS Ch. V / IMO Polar Code)",
@@ -177,7 +177,7 @@ export function downloadRiskCsv(payload: RiskTelemetryPayload): void {
   if (typeof window === "undefined") return;
   const csv = generateRiskCsv(payload);
   const dataUri = `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`;
-  const filename = `fordgeburg-risk-telemetry-${payload.selectedRoute.id}-${new Date().toISOString().slice(0, 10)}.csv`;
+  const filename = `fordberg-risk-telemetry-${payload.selectedRoute.id}-${new Date().toISOString().slice(0, 10)}.csv`;
   const link = document.createElement("a");
   link.setAttribute("href", dataUri);
   link.setAttribute("download", filename);
@@ -193,7 +193,7 @@ export function downloadRiskJson(payload: RiskTelemetryPayload): void {
   if (typeof window === "undefined") return;
   const json = generateRiskJson(payload);
   const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(json)}`;
-  const filename = `fordgeburg-risk-telemetry-${payload.selectedRoute.id}-${new Date().toISOString().slice(0, 10)}.json`;
+  const filename = `fordberg-risk-telemetry-${payload.selectedRoute.id}-${new Date().toISOString().slice(0, 10)}.json`;
   const link = document.createElement("a");
   link.setAttribute("href", dataUri);
   link.setAttribute("download", filename);

@@ -139,7 +139,7 @@ export default function SettingsPage() {
   // Load from localStorage if present
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("fordge_navigation_settings");
+      const stored = localStorage.getItem("fordberg_navigation_settings");
       if (stored) {
         setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(stored) });
       }
@@ -151,7 +151,7 @@ export default function SettingsPage() {
   const saveSettings = (newSettings: SettingsState) => {
     setSettings(newSettings);
     try {
-      localStorage.setItem("fordge_navigation_settings", JSON.stringify(newSettings));
+      localStorage.setItem("fordberg_navigation_settings", JSON.stringify(newSettings));
     } catch {
       // Ignore in-memory fallback
     }
@@ -169,7 +169,7 @@ export default function SettingsPage() {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(settings, null, 2));
     const downloadAnchor = document.createElement("a");
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `fordge_settings_profile_${new Date().toISOString().slice(0, 10)}.json`);
+    downloadAnchor.setAttribute("download", `fordberg_settings_profile_${new Date().toISOString().slice(0, 10)}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();

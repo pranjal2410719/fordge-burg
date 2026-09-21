@@ -47,7 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Menu size={16} />
             </button>
             <div className="md:hidden">
-              <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 bg-clip-text text-base font-extrabold tracking-tight text-transparent">fordgeBurg</span>
+              <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 bg-clip-text text-base font-extrabold tracking-tight text-transparent">fordberg</span>
             </div>
           </div>
 

@@ -64,7 +64,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     <nav className="flex h-full flex-col overflow-y-auto">
       {/* Wordmark */}
       <div className="px-5 py-5">
-        <p className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 bg-clip-text text-xl font-extrabold tracking-tight text-transparent leading-none">fordgeBurg</p>
+        <p className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 bg-clip-text text-xl font-extrabold tracking-tight text-transparent leading-none">fordberg</p>
         <p className="text-[10px] text-text-muted mt-1">Antarctic Maritime DSS</p>
       </div>
 

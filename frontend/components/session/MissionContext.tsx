@@ -36,7 +36,7 @@ interface MissionContextValue {
 
 const MissionContext = createContext<MissionContextValue | null>(null);
 
-export const ROUTE_STORAGE_KEY = "fordge_selected_route_id";
+export const ROUTE_STORAGE_KEY = "fordberg_selected_route_id";
 
 const VALID_ROUTE_IDS: readonly RouteId[] = ["shortest", "safest", "fuel_efficient", "balanced"] as const;
 

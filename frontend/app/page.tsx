@@ -51,7 +51,7 @@ export default function LandingPage() {
             Antarctic Maritime Decision Support
           </div>
           <h1 className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-400 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent">
-            fordgeBurg
+            fordberg
           </h1>
           <p className="mt-3 text-base text-text-muted max-w-md mx-auto">
             Ask your polar operations workspace anything — get routed to the right intelligence module.
