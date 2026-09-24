@@ -27,7 +27,7 @@ import {
 } from "@/components/risk/MitigationFilters";
 import { ConsequenceModal } from "@/components/risk/ConsequenceModal";
 import { MitigationModal } from "@/components/risk/MitigationModal";
-import { MitigationAnalytics } from "@/components/risk/MitigationAnalytics";
+import { DynamicMitigationGraph } from "@/components/risk/DynamicMitigationGraph";
 import { type ConsequenceItem } from "@/lib/riskExport";
 
 const STATUS_STYLE: Record<string, string> = {
@@ -63,6 +63,7 @@ export default function RiskPage() {
   // Modal inspection states
   const [activeConsequenceKey, setActiveConsequenceKey] = useState<string | null>(null);
   const [activeMitigationId, setActiveMitigationId] = useState<string | null>(null);
+  const [hoveredMitigationId, setHoveredMitigationId] = useState<string | null>(null);
 
   const isOpenWater = vessel.iceClass === "OpenWater";
   const risk = selectedRoute.averageRiskScore;
@@ -283,186 +284,198 @@ export default function RiskPage() {
         />
       </div>
 
-      {/* Mitigation Analytics Dashboard */}
-      <div className="mb-6">
-        <MitigationAnalytics activeVesselClass={vessel.iceClass} acked={acked} />
-      </div>
-
-      {/* Mitigation Checklist Section */}
-      <div className="rounded-xl border border-border bg-surface shadow-sm">
-        {/* Header & Quick Actions */}
-        <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-navy-900">Tactical Mitigation Measures</h2>
-              <span className="rounded-full bg-surface2 px-2 py-0.5 text-xs font-semibold text-text-muted">
-                {ackedCount}/{MITIGATIONS.length} Acknowledged
-              </span>
-            </div>
-            <p className="mt-0.5 text-xs text-text-muted">
-              IMO Polar Code chapter 3 operational safeguards &amp; ice navigation SOPs
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* Circular Progress Indicator */}
-            <div className="flex items-center gap-2">
-              <svg viewBox="0 0 36 36" className="h-9 w-9 -rotate-90">
-                <circle cx="18" cy="18" r="15" fill="none" stroke="var(--color-border)" strokeWidth="3" />
-                <circle
-                  cx="18"
-                  cy="18"
-                  r="15"
-                  fill="none"
-                  stroke={allAcked ? "var(--color-risk-low)" : "var(--color-blue-600)"}
-                  strokeWidth="3"
-                  strokeDasharray={`${(ackedCount / MITIGATIONS.length) * 94.2} 94.2`}
-                  className="transition-all duration-500"
-                />
-              </svg>
-              <div className="text-[11px]">
-                <p className="font-mono font-bold text-navy-900">
-                  {Math.round((ackedCount / MITIGATIONS.length) * 100)}%
-                </p>
-                <p className="text-[10px] text-text-subtle">Completed</p>
+      {/* Side-by-Side 50/50 Split: Tactical Mitigation Checklist (Left) & Dynamic Residual Risk Graph (Right) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+        {/* Left: Mitigation Checklist Section */}
+        <div className="rounded-xl border border-border bg-surface shadow-sm overflow-hidden">
+          {/* Header & Quick Actions */}
+          <div className="flex flex-col gap-3 border-b border-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-navy-900">Tactical Mitigation Measures</h2>
+                <span className="rounded-full bg-surface2 px-2 py-0.5 text-xs font-semibold text-text-muted">
+                  {ackedCount}/{MITIGATIONS.length} Acknowledged
+                </span>
               </div>
+              <p className="mt-0.5 text-xs text-text-muted">
+                IMO Polar Code chapter 3 operational safeguards &amp; ice navigation SOPs
+              </p>
             </div>
 
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={handleAcknowledgeAll}
-                disabled={allAcked}
-                className={cn(
-                  "rounded-lg px-3 py-1.5 text-xs font-semibold shadow-xs transition-all cursor-pointer",
-                  allAcked
-                    ? "border border-border bg-surface2 text-text-subtle cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
-                )}
-              >
-                Ack All
-              </button>
-              {ackedCount > 0 && (
+            <div className="flex items-center gap-3">
+              {/* Circular Progress Indicator */}
+              <div className="flex items-center gap-2">
+                <svg viewBox="0 0 36 36" className="h-9 w-9 -rotate-90">
+                  <circle cx="18" cy="18" r="15" fill="none" stroke="var(--color-border)" strokeWidth="3" />
+                  <circle
+                    cx="18"
+                    cy="18"
+                    r="15"
+                    fill="none"
+                    stroke={allAcked ? "var(--color-risk-low)" : "var(--color-blue-600)"}
+                    strokeWidth="3"
+                    strokeDasharray={`${(ackedCount / MITIGATIONS.length) * 94.2} 94.2`}
+                    className="transition-all duration-500"
+                  />
+                </svg>
+                <div className="text-[11px]">
+                  <p className="font-mono font-bold text-navy-900">
+                    {Math.round((ackedCount / MITIGATIONS.length) * 100)}%
+                  </p>
+                  <p className="text-[10px] text-text-subtle">Completed</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={handleResetAcks}
-                  className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs font-medium text-text-muted hover:bg-surface2 hover:text-navy-900 transition-colors cursor-pointer"
-                  title="Reset all acknowledgments"
+                  onClick={handleAcknowledgeAll}
+                  disabled={allAcked}
+                  className={cn(
+                    "rounded-lg px-3 py-1.5 text-xs font-semibold shadow-xs transition-all cursor-pointer",
+                    allAcked
+                      ? "border border-border bg-surface2 text-text-subtle cursor-not-allowed"
+                      : "bg-blue-600 text-white hover:bg-blue-700"
+                  )}
                 >
-                  Reset
+                  Ack All
                 </button>
-              )}
+                {ackedCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleResetAcks}
+                    className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs font-medium text-text-muted hover:bg-surface2 hover:text-navy-900 transition-colors cursor-pointer"
+                    title="Reset all acknowledgments"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
             </div>
+          </div>
+
+          {/* Filter controls bar */}
+          <div className="p-4 border-b border-border/80">
+            <MitigationFilters
+              mitigations={MITIGATIONS}
+              acked={acked}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              ackFilter={ackFilter}
+              onAckFilterChange={setAckFilter}
+              searchQuery={searchQuery}
+              onSearchQueryChange={setSearchQuery}
+              sortBy={sortBy}
+              onSortByChange={setSortBy}
+              onResetFilters={handleResetFilters}
+              totalFilteredCount={filteredMitigations.length}
+            />
+          </div>
+
+          {/* Mitigations List */}
+          <div className="divide-y divide-border">
+            {filteredMitigations.length === 0 ? (
+              <div className="py-10 text-center">
+                <Info size={24} className="mx-auto text-text-subtle mb-2" />
+                <p className="text-sm font-semibold text-navy-900">No matching mitigations found</p>
+                <p className="text-xs text-text-muted mt-1">Try adjusting or clearing your search and filter criteria.</p>
+                <button
+                  type="button"
+                  onClick={handleResetFilters}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-navy-900 hover:bg-surface2 cursor-pointer"
+                >
+                  Reset all filters
+                </button>
+              </div>
+            ) : (
+              filteredMitigations.map((m) => {
+                const Icon = STATUS_ICON[m.status] ?? ShieldCheck;
+                const isAck = !!acked[m.id];
+                const isHovered = hoveredMitigationId === m.id;
+
+                return (
+                  <div
+                    key={m.id}
+                    onMouseEnter={() => setHoveredMitigationId(m.id)}
+                    onMouseLeave={() => setHoveredMitigationId(null)}
+                    className={cn(
+                      "flex flex-col gap-3 px-5 py-3.5 transition-all sm:flex-row sm:items-center sm:justify-between",
+                      isHovered ? "bg-blue-50/40 ring-1 ring-inset ring-blue-300/60" : isAck ? "bg-surface" : "bg-surface hover:bg-surface2/50"
+                    )}
+                  >
+                    {/* Left: Checkbox + Status icon + Title & Detail */}
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => toggleAck(m.id)}
+                        className="mt-0.5 shrink-0 text-text-muted hover:text-blue-600 transition-colors cursor-pointer"
+                        title={isAck ? "Mark unacknowledged" : "Mark acknowledged"}
+                      >
+                        {isAck ? (
+                          <CheckCircle2 size={18} className="text-risk-low" />
+                        ) : (
+                          <Circle size={18} className="text-border-strong hover:text-text-muted" />
+                        )}
+                      </button>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span
+                            className={cn(
+                              "font-semibold text-sm transition-colors",
+                              isAck ? "text-text-muted line-through" : "text-navy-900"
+                            )}
+                          >
+                            {m.title}
+                          </span>
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                              STATUS_STYLE[m.status]
+                            )}
+                          >
+                            <Icon size={10} />
+                            {m.status}
+                          </span>
+                        </div>
+                        <p
+                          className={cn(
+                            "mt-0.5 text-xs leading-relaxed transition-colors",
+                            isAck ? "text-text-subtle" : "text-text-secondary"
+                          )}
+                        >
+                          {m.detail}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Right: Modal SOP Details Trigger */}
+                    <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setActiveMitigationId(m.id)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-navy-900 hover:border-border-strong hover:bg-surface2 transition-all cursor-pointer"
+                      >
+                        <span>View SOP</span>
+                        <ExternalLink size={11} className="text-text-muted" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
-        {/* Filter controls bar */}
-        <div className="p-4 border-b border-border/80">
-          <MitigationFilters
-            mitigations={MITIGATIONS}
+        {/* Right: Sticky Dynamic Residual Risk & Impact Graph */}
+        <div className="lg:sticky lg:top-4">
+          <DynamicMitigationGraph
+            baselineRisk={risk}
+            vesselIceClass={vessel.iceClass}
             acked={acked}
-            statusFilter={statusFilter}
-            onStatusFilterChange={setStatusFilter}
-            ackFilter={ackFilter}
-            onAckFilterChange={setAckFilter}
-            searchQuery={searchQuery}
-            onSearchQueryChange={setSearchQuery}
-            sortBy={sortBy}
-            onSortByChange={setSortBy}
-            onResetFilters={handleResetFilters}
-            totalFilteredCount={filteredMitigations.length}
+            hoveredMitigationId={hoveredMitigationId}
+            onSelectMitigation={(id) => setActiveMitigationId(id)}
           />
-        </div>
-
-        {/* Mitigations List */}
-        <div className="divide-y divide-border">
-          {filteredMitigations.length === 0 ? (
-            <div className="py-10 text-center">
-              <Info size={24} className="mx-auto text-text-subtle mb-2" />
-              <p className="text-sm font-semibold text-navy-900">No matching mitigations found</p>
-              <p className="text-xs text-text-muted mt-1">Try adjusting or clearing your search and filter criteria.</p>
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-navy-900 hover:bg-surface2 cursor-pointer"
-              >
-                Reset all filters
-              </button>
-            </div>
-          ) : (
-            filteredMitigations.map((m) => {
-              const Icon = STATUS_ICON[m.status] ?? ShieldCheck;
-              const isAck = !!acked[m.id];
-
-              return (
-                <div
-                  key={m.id}
-                  className={cn(
-                    "flex flex-col gap-3 px-5 py-3.5 transition-colors sm:flex-row sm:items-center sm:justify-between",
-                    isAck ? "bg-surface" : "bg-surface hover:bg-surface2/50"
-                  )}
-                >
-                  {/* Left: Checkbox + Status icon + Title & Detail */}
-                  <div className="flex items-start gap-3 flex-1 min-w-0">
-                    <button
-                      type="button"
-                      onClick={() => toggleAck(m.id)}
-                      className="mt-0.5 shrink-0 text-text-muted hover:text-blue-600 transition-colors cursor-pointer"
-                      title={isAck ? "Mark unacknowledged" : "Mark acknowledged"}
-                    >
-                      {isAck ? (
-                        <CheckCircle2 size={18} className="text-risk-low" />
-                      ) : (
-                        <Circle size={18} className="text-border-strong hover:text-text-muted" />
-                      )}
-                    </button>
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span
-                          className={cn(
-                            "font-semibold text-sm transition-colors",
-                            isAck ? "text-text-muted line-through" : "text-navy-900"
-                          )}
-                        >
-                          {m.title}
-                        </span>
-                        <span
-                          className={cn(
-                            "inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                            STATUS_STYLE[m.status]
-                          )}
-                        >
-                          <Icon size={10} />
-                          {m.status}
-                        </span>
-                      </div>
-                      <p
-                        className={cn(
-                          "mt-0.5 text-xs leading-relaxed transition-colors",
-                          isAck ? "text-text-subtle" : "text-text-secondary"
-                        )}
-                      >
-                        {m.detail}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Right: Modal SOP Details Trigger */}
-                  <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setActiveMitigationId(m.id)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs font-semibold text-navy-900 hover:border-border-strong hover:bg-surface2 transition-all cursor-pointer"
-                    >
-                      <span>View SOP</span>
-                      <ExternalLink size={11} className="text-text-muted" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-          )}
         </div>
       </div>
 

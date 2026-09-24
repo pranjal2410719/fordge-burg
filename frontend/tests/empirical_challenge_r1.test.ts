@@ -35,7 +35,7 @@ describe('Adversarial & Empirical Stress Verification: Milestone 1 (R1)', () => 
         let computedRunningCumulative = 0;
 
         for (let i = 0; i < route.waypoints.length; i++) {
-          const wp = route.waypoints[i];
+          const wp: (typeof route.waypoints)[number] = route.waypoints[i];
 
           // Waypoint coordinate validation
           assert.match(wp.lat, /^\d+(\.\d+)?°S$/, `${routeId} WP${i} lat format valid`);

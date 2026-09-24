@@ -1,8 +1,18 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { BASELINE_ROUTES, type RouteAlternative, type RouteId } from "@/lib/data";
 import { ROUTE_COLORS } from "@/components/map/SimpleMap";
-import { cn } from "@/lib/utils";
+import { cn, riskBadge, riskBar, riskLabel } from "@/lib/utils";
+import { CorridorDetailModal } from "./CorridorDetailModal";
+import {
+  Compass,
+  Clock,
+  Fuel,
+  ArrowUpRight,
+  SlidersHorizontal,
+  Sparkles,
+} from "lucide-react";
 
 interface RouteRiskComparisonProps {
   selectedRouteId: RouteId;
@@ -10,291 +20,306 @@ interface RouteRiskComparisonProps {
   routes?: RouteAlternative[];
 }
 
+type SortCriterion = "default" | "risk" | "eta" | "fuel";
+
 export function RouteRiskComparison({
   selectedRouteId,
   onSelectRoute,
   routes = BASELINE_ROUTES,
 }: RouteRiskComparisonProps) {
-  // Layout Constants
-  // ViewBox: 0 0 760 250
-  const TRACK_X = 185;
-  const TRACK_W = 440;
-  const SCALE = TRACK_W / 100; // 4.40px per score point
+  const [sortBy, setSortBy] = useState<SortCriterion>("default");
+  const [hoveredRouteId, setHoveredRouteId] = useState<RouteId | null>(null);
+  const [detailModalRoute, setDetailModalRoute] = useState<RouteAlternative | null>(null);
+
+  // Sorted routes
+  const sortedRoutes = useMemo(() => {
+    const list = [...routes];
+    if (sortBy === "risk") {
+      list.sort((a, b) => a.averageRiskScore - b.averageRiskScore);
+    } else if (sortBy === "eta") {
+      list.sort((a, b) => a.etaHours - b.etaHours);
+    } else if (sortBy === "fuel") {
+      list.sort((a, b) => a.fuelTons - b.fuelTons);
+    }
+    return list;
+  }, [routes, sortBy]);
+
+  const activeRoute = useMemo(
+    () => routes.find((r) => r.id === selectedRouteId) ?? routes[0],
+    [routes, selectedRouteId]
+  );
 
   return (
-    <div className="relative w-full rounded-xl border border-border bg-surface p-4 shadow-xs">
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/80 pb-3">
-        <div>
-          <h3 className="text-sm font-bold text-navy-900">Route Alternatives Risk Comparison</h3>
+    <div className="relative w-full h-full rounded-xl border border-border bg-surface shadow-sm overflow-hidden flex flex-col justify-between">
+      <div>
+        {/* Header & Quick Sort Controls */}
+        <div className="flex flex-col gap-2.5 border-b border-border/80 px-4 py-3 bg-surface2/30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Compass size={16} className="text-blue-600 shrink-0" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-navy-900">
+                Route Alternatives Risk Comparison
+              </h3>
+            </div>
+            <span className="rounded bg-surface2 px-2 py-0.5 text-[10px] font-mono text-text-muted">
+              {routes.length} Corridors
+            </span>
+          </div>
+
           <p className="text-xs text-text-muted">
-            Range-bullet analysis: Average Risk vs Worst-Case Peak Risk · Click any route to select
+            Range-bullet analysis: Average Risk vs Worst-Case Peak Risk · Click card to select, or ↗ for full telemetry popup
           </p>
+
+          {/* Sort & Legend Strip */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+            <div className="flex items-center gap-2 text-[10px] text-text-muted">
+              <div className="flex items-center gap-1">
+                <span className="h-2 w-2.5 rounded-xs bg-blue-600" />
+                <span>Avg</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="h-2 w-2.5 rounded-xs border border-dashed border-blue-400 bg-blue-100" />
+                <span>Spread</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="h-2.5 w-0.5 bg-red-600 rounded-full" />
+                <span>Peak</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-0.5 rounded-md border border-border bg-surface p-0.5 shadow-2xs">
+              <span className="px-1.5 text-[9px] font-bold uppercase tracking-wider text-text-subtle flex items-center gap-1">
+                <SlidersHorizontal size={9} /> Sort
+              </span>
+              {[
+                { id: "default", label: "Default" },
+                { id: "risk", label: "Lowest Risk" },
+                { id: "eta", label: "Fastest" },
+                { id: "fuel", label: "Eco" },
+              ].map(({ id, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setSortBy(id as SortCriterion)}
+                  className={cn(
+                    "rounded px-1.5 py-0.5 text-[10px] font-semibold transition-all cursor-pointer",
+                    sortBy === id
+                      ? "bg-navy-900 text-white shadow-xs"
+                      : "text-text-muted hover:bg-surface2 hover:text-navy-900"
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3 text-[11px] font-medium text-text-muted">
-          <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-4 rounded-xs bg-navy-900" />
-            <span>Average Risk</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="h-2.5 w-4 rounded-xs border border-dashed border-navy-700 bg-navy-700/20" />
-            <span>Peak Risk Spread</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="h-3 w-1 bg-risk-high rounded-full" />
-            <span>Max Needle</span>
-          </div>
-        </div>
-      </div>
 
-      <div className="mt-3 w-full overflow-hidden">
-        <svg
-          viewBox="0 0 760 250"
-          className="h-auto w-full select-none"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          {/* Axis Header & Scale Markers */}
-          <g>
-            {/* Low Risk Zone */}
-            <rect
-              x={TRACK_X}
-              y={10}
-              width={35 * SCALE}
-              height={14}
-              rx="2"
-              fill="var(--color-risk-low)"
-              fillOpacity="0.12"
-            />
-            <text
-              x={TRACK_X + (35 * SCALE) / 2}
-              y={21}
-              textAnchor="middle"
-              fontSize="9"
-              fontWeight="bold"
-              fill="var(--color-risk-low)"
-            >
-              LOW RISK (0–35)
-            </text>
-
-            {/* Moderate Risk Zone */}
-            <rect
-              x={TRACK_X + 35 * SCALE}
-              y={10}
-              width={30 * SCALE}
-              height={14}
-              rx="2"
-              fill="var(--color-risk-med)"
-              fillOpacity="0.12"
-            />
-            <text
-              x={TRACK_X + 50 * SCALE}
-              y={21}
-              textAnchor="middle"
-              fontSize="9"
-              fontWeight="bold"
-              fill="var(--color-risk-med)"
-            >
-              MODERATE (35–65)
-            </text>
-
-            {/* High Risk Zone */}
-            <rect
-              x={TRACK_X + 65 * SCALE}
-              y={10}
-              width={35 * SCALE}
-              height={14}
-              rx="2"
-              fill="var(--color-risk-high)"
-              fillOpacity="0.12"
-            />
-            <text
-              x={TRACK_X + 82.5 * SCALE}
-              y={21}
-              textAnchor="middle"
-              fontSize="9"
-              fontWeight="bold"
-              fill="var(--color-risk-high)"
-            >
-              HIGH RISK (65–100)
-            </text>
-          </g>
-
-          {/* 4 Route Rows */}
-          {routes.map((route, i) => {
+        {/* 2x2 Responsive Corridor Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5">
+          {sortedRoutes.map((route) => {
             const isSelected = route.id === selectedRouteId;
-            const routeColor = ROUTE_COLORS[route.id] || "#1e6fd9";
-            const rowY = 36 + i * 52;
+            const routeColor = ROUTE_COLORS[route.id] || "#2563eb";
 
-            const avgW = route.averageRiskScore * SCALE;
-            const spreadX = TRACK_X + avgW;
-            const spreadW = Math.max((route.maxRiskScore - route.averageRiskScore) * SCALE, 0);
-            const maxX = TRACK_X + route.maxRiskScore * SCALE;
+            // SVG Scale calculations
+            const SVG_W = 320;
+            const avgW = (route.averageRiskScore / 100) * SVG_W;
+            const maxW = (route.maxRiskScore / 100) * SVG_W;
+            const spreadW = Math.max(0, maxW - avgW);
 
             return (
-              <g
+              <div
                 key={route.id}
-                className="cursor-pointer transition-all"
+                onMouseEnter={() => setHoveredRouteId(route.id)}
+                onMouseLeave={() => setHoveredRouteId(null)}
                 onClick={() => onSelectRoute(route.id)}
+                className={cn(
+                  "group relative rounded-xl border p-3.5 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-2.5",
+                  isSelected
+                    ? "border-blue-600 bg-blue-50/40 ring-2 ring-blue-500/80 shadow-xs"
+                    : "border-border bg-surface hover:border-blue-300 hover:bg-surface2/50"
+                )}
               >
-                {/* Row background highlight when selected */}
-                {isSelected && (
-                  <rect
-                    x="5"
-                    y={rowY}
-                    width="750"
-                    height="46"
-                    rx="8"
-                    fill={routeColor}
-                    fillOpacity="0.08"
-                    stroke={routeColor}
-                    strokeWidth="1.5"
-                  />
-                )}
+                {/* Card Top: Identity, Badges, & Arrow Popup Button */}
+                <div>
+                  <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <div
+                        className={cn(
+                          "h-2.5 w-2.5 rounded-full shrink-0 border-2 transition-transform duration-200",
+                          isSelected
+                            ? "border-blue-600 bg-blue-600 ring-2 ring-blue-200 scale-110"
+                            : "border-border-strong bg-surface group-hover:border-blue-400"
+                        )}
+                      />
+                      <span className="text-xs font-bold text-navy-900 group-hover:text-blue-700 transition-colors truncate">
+                        {route.name}
+                      </span>
+                    </div>
 
-                {/* Radio selection circle */}
-                <circle
-                  cx="20"
-                  cy={rowY + 23}
-                  r="7"
-                  fill={isSelected ? routeColor : "#ffffff"}
-                  stroke={isSelected ? routeColor : "var(--color-border-strong)"}
-                  strokeWidth="2"
-                />
-                {isSelected && (
-                  <circle cx="20" cy={rowY + 23} r="3" fill="#ffffff" />
-                )}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span
+                        className={cn(
+                          "rounded px-1.5 py-0.2 text-[9px] font-bold uppercase border",
+                          riskBadge(route.averageRiskScore)
+                        )}
+                      >
+                        {riskLabel(route.averageRiskScore)}
+                      </span>
+                      {isSelected && (
+                        <span className="rounded bg-blue-600 px-1.5 py-0.2 text-[8px] font-mono font-bold text-white uppercase">
+                          Active
+                        </span>
+                      )}
+                      {/* Aero/Popup Window Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDetailModalRoute(route);
+                        }}
+                        className="rounded-md border border-border bg-surface p-1 text-text-muted hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700 transition-all cursor-pointer"
+                        title={`Open full telemetry popup for ${route.name}`}
+                      >
+                        <ArrowUpRight size={13} />
+                      </button>
+                    </div>
+                  </div>
 
-                {/* Route Header Info */}
-                <text
-                  x="36"
-                  y={rowY + 18}
-                  fontSize="12"
-                  fontWeight="bold"
-                  fill="var(--color-navy-900)"
-                >
-                  {route.name}
-                </text>
-                <text
-                  x="36"
-                  y={rowY + 33}
-                  fontSize="10"
-                  fontFamily="monospace"
-                  fill="var(--color-text-subtle)"
-                >
-                  {route.distanceNm} NM · {route.etaHours} hrs
-                </text>
+                  {/* Trade-off subtitle */}
+                  <p className="mt-1 text-[11px] text-text-muted line-clamp-1" title={route.tradeOff}>
+                    {route.tradeOff}
+                  </p>
+                </div>
 
-                {/* Track Background */}
-                <rect
-                  x={TRACK_X}
-                  y={rowY + 12}
-                  width={TRACK_W}
-                  height={22}
-                  rx="4"
-                  fill="var(--color-canvas)"
-                  stroke="var(--color-border)"
-                  strokeWidth="1"
-                />
+                {/* Card Middle: Native SVG Range-Bullet Visual Vector Track */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[9px] font-mono font-semibold">
+                    <span className="text-text-muted">
+                      Avg: <strong className="text-navy-900">{route.averageRiskScore}</strong>/100
+                    </span>
+                    <span className="text-text-subtle">
+                      Peak: <strong className={route.maxRiskScore >= 65 ? "text-risk-high" : "text-navy-900"}>{route.maxRiskScore}</strong> (Δ+{route.maxRiskScore - route.averageRiskScore})
+                    </span>
+                  </div>
 
-                {/* Spread Bar (avg to max) */}
-                {spreadW > 0 && (
-                  <rect
-                    x={spreadX}
-                    y={rowY + 12}
-                    width={spreadW}
-                    height={22}
-                    rx="2"
-                    fill={routeColor}
-                    fillOpacity="0.22"
-                    stroke={routeColor}
-                    strokeWidth="1"
-                    strokeDasharray="3 3"
-                  />
-                )}
+                  <div className="relative w-full rounded overflow-hidden bg-canvas border border-border">
+                    <svg viewBox="0 0 320 18" className="w-full h-4.5 select-none block">
+                      {/* 3 Risk Zone Background Bands */}
+                      <rect x="0" y="0" width="112" height="18" fill="var(--color-risk-low)" fillOpacity="0.1" />
+                      <rect x="112" y="0" width="96" height="18" fill="var(--color-risk-med)" fillOpacity="0.1" />
+                      <rect x="208" y="0" width="112" height="18" fill="var(--color-risk-high)" fillOpacity="0.1" />
 
-                {/* Average Solid Bar */}
-                <rect
-                  x={TRACK_X}
-                  y={rowY + 12}
-                  width={avgW}
-                  height={22}
-                  rx="4"
-                  fill={routeColor}
-                />
-                <text
-                  x={TRACK_X + avgW - 6}
-                  y={rowY + 27}
-                  fontSize="11"
-                  fontWeight="bold"
-                  fontFamily="monospace"
-                  fill="#ffffff"
-                  textAnchor="end"
-                >
-                  {route.averageRiskScore}
-                </text>
+                      {/* Subtle Zone Dividers */}
+                      <line x1="112" y1="0" x2="112" y2="18" stroke="var(--color-border)" strokeWidth="1" strokeDasharray="2 2" />
+                      <line x1="208" y1="0" x2="208" y2="18" stroke="var(--color-border)" strokeWidth="1" strokeDasharray="2 2" />
 
-                {/* Max Risk Needle & Peak Bracket */}
-                <line
-                  x1={maxX}
-                  y1={rowY + 8}
-                  x2={maxX}
-                  y2={rowY + 38}
-                  stroke={routeColor}
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-                <polygon
-                  points={`${maxX},${rowY + 8} ${maxX - 4},${rowY + 2} ${maxX + 4},${rowY + 2}`}
-                  fill={routeColor}
-                />
+                      {/* Spread Bar (from Avg to Peak Max) */}
+                      {spreadW > 0 && (
+                        <rect
+                          x={avgW}
+                          y="3"
+                          width={spreadW}
+                          height="12"
+                          rx="2"
+                          fill={routeColor}
+                          fillOpacity="0.25"
+                          stroke={routeColor}
+                          strokeWidth="1"
+                          strokeDasharray="3 2"
+                        />
+                      )}
 
-                {/* Right Statistics & Delta Badges */}
-                <text
-                  x="636"
-                  y={rowY + 20}
-                  fontSize="11"
-                  fontWeight="bold"
-                  fontFamily="monospace"
-                  fill={route.maxRiskScore >= 65 ? "var(--color-risk-high)" : "var(--color-navy-900)"}
-                >
-                  Max {route.maxRiskScore}
-                </text>
-                <text
-                  x="636"
-                  y={rowY + 33}
-                  fontSize="10"
-                  fontFamily="monospace"
-                  fill="var(--color-text-subtle)"
-                >
-                  Δ +{route.maxRiskScore - route.averageRiskScore} pts
-                </text>
+                      {/* Solid Average Risk Bar */}
+                      <rect
+                        x="0"
+                        y="3"
+                        width={avgW}
+                        height="12"
+                        rx="2.5"
+                        fill={routeColor}
+                        className="transition-all duration-300"
+                      />
 
-                {/* Compatibility Chip */}
-                <rect
-                  x="695"
-                  y={rowY + 14}
-                  width="55"
-                  height="18"
-                  rx="4"
-                  fill={route.compatibility === "high" ? "var(--color-risk-low-bg)" : "var(--color-risk-med-bg)"}
-                  stroke={route.compatibility === "high" ? "var(--color-risk-low)" : "var(--color-risk-med)"}
-                  strokeWidth="0.75"
-                  strokeOpacity="0.4"
-                />
-                <text
-                  x="722.5"
-                  y={rowY + 26}
-                  fontSize="9"
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  fill={route.compatibility === "high" ? "var(--color-risk-low)" : "var(--color-risk-med)"}
-                >
-                  {route.compatibility.toUpperCase()}
-                </text>
-              </g>
+                      {/* Max Risk Needle Pin */}
+                      <line
+                        x1={maxW}
+                        y1="1"
+                        x2={maxW}
+                        y2="17"
+                        stroke={route.maxRiskScore >= 65 ? "var(--color-risk-high)" : routeColor}
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                      <circle
+                        cx={maxW}
+                        cy="2.5"
+                        r="2"
+                        fill={route.maxRiskScore >= 65 ? "var(--color-risk-high)" : routeColor}
+                      />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Card Bottom: Metadata Badges & Polar RIO */}
+                <div className="flex items-center justify-between gap-1 text-[9px] font-mono border-t border-border/50 pt-1.5 flex-wrap">
+                  <div className="flex items-center gap-1.5 text-text-muted">
+                    <span className="flex items-center gap-0.5">
+                      <Clock size={9} />
+                      {route.etaHours}h
+                    </span>
+                    <span>·</span>
+                    <span className="flex items-center gap-0.5">
+                      <Fuel size={9} />
+                      {route.fuelTons}MT
+                    </span>
+                  </div>
+
+                  <span
+                    className={cn(
+                      "rounded px-1.5 py-0.2 font-bold border text-[8px]",
+                      route.rio.status === "PASS"
+                        ? "bg-risk-low-bg border-risk-low/30 text-risk-low"
+                        : "bg-risk-med-bg border-risk-med/30 text-risk-med"
+                    )}
+                  >
+                    RIO {route.rio.scoreFormatted}
+                  </span>
+                </div>
+              </div>
             );
           })}
-        </svg>
+        </div>
       </div>
+
+      {/* Active Corridor Benchmark Insight Callout */}
+      <div className="border-t border-border/80 bg-blue-50/40 p-2.5 px-3 flex items-center justify-between gap-2 text-[11px]">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Sparkles size={12} className="text-blue-600 shrink-0" />
+          <p className="text-navy-900 font-medium truncate">
+            Active: <strong>{activeRoute.name}</strong> ({activeRoute.averageRiskScore}/100)
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setDetailModalRoute(activeRoute)}
+          className="text-[10px] text-blue-700 hover:text-blue-900 font-semibold font-mono shrink-0 inline-flex items-center gap-0.5 cursor-pointer"
+        >
+          <span>Inspect Full Corridor</span>
+          <ArrowUpRight size={11} />
+        </button>
+      </div>
+
+      {/* Corridor Detailed Telemetry Modal Dialog */}
+      {detailModalRoute && (
+        <CorridorDetailModal
+          isOpen={!!detailModalRoute}
+          onClose={() => setDetailModalRoute(null)}
+          route={detailModalRoute}
+          isSelected={detailModalRoute.id === selectedRouteId}
+          onSelectRoute={(id) => onSelectRoute(id)}
+        />
+      )}
     </div>
   );
 }
